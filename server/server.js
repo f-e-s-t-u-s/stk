@@ -63,12 +63,12 @@ app.post("/api/stk", generateToken, async (req, res) => {
         BusinessShortCode: shortcode,
         Password: password,
         Timestamp: timestamp,
-        TransactionType: "CustomerBuyGoodsOnline",
+        TransactionType: "CustomerPayBillOnline",
         Amount: amount,
         PartyA: `254${phone}`,
         PartyB: shortcode,
         PhoneNumber: `254${phone}`,
-        CallBackURL: "https://mydomain.com/path",
+        CallBackURL: process.env.CALLBACK,
         AccountReference: "test",
         TransactionDesc: "test",
       },
@@ -79,14 +79,21 @@ app.post("/api/stk", generateToken, async (req, res) => {
       }
     )
     .then((data) => {
-      console.log(data);
-      return res.status(200).json(data);
+    //   console.log(data);
+      return res.status(200).json(data.data);
     })
     .catch((err) => {
       console.log(err);
       return res.status(400).json(err.message);
     });
 });
+
+
+// callbackk
+app.post("/api/callback", (req,res)=>{
+   const data = req.body;
+   console.log(data);
+})
 
 app.listen(6000, () => {
   console.log("app listening on port 6000");
