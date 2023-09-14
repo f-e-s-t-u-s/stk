@@ -2,21 +2,28 @@ const express = require("express");
 const app = express();
 const bodyparser = require("body-parser");
 const axios = require("axios");
+const mysql = require("mysql");
 const cors = require("cors");
 const dotenv = require("dotenv");
 dotenv.config();
+const port = process.env.PORT;
 
 app.use(cors());
 app.use(bodyparser.urlencoded({ extended: true }));
 app.use(bodyparser.json());
 
-// get token middleware
+// ! database connection
+const connection = mysql.createConnection({
+  host: process.env.HOST,
+  user: process.env.USER,
+  password: process.env.PASSWORD,
+  database: process.env.DATABASE,
+});
+
+// ! get token middleware
 const generateToken = async (req, res, next) => {
   const consumer_key = process.env.CONSUMER_KEY;
   const consumer_secret = process.env.CONSUMER_SECRET;
-  // const auth = new Buffer.from(`${consumer_key}:${consumer_secret}`).toString(
-  //   "base64"
-  // );
   const auth = btoa(`${consumer_key}:${consumer_secret}`);
 
   await axios
@@ -37,7 +44,8 @@ const generateToken = async (req, res, next) => {
       console.log(error);
     });
 };
-// payment
+
+// ! payment route
 app.post("/api/stk", generateToken, async (req, res) => {
   const { amount } = req.body;
   const phone = req.body.phone.substring(1);
@@ -79,7 +87,7 @@ app.post("/api/stk", generateToken, async (req, res) => {
       }
     )
     .then((data) => {
-    //   console.log(data);
+      //   console.log(data);
       return res.status(200).json(data.data);
     })
     .catch((err) => {
@@ -88,13 +96,61 @@ app.post("/api/stk", generateToken, async (req, res) => {
     });
 });
 
+// ! callbackk
+app.post("/api/callback", (req, res) => {
+  const data = req.body;
+  console.log(data);
 
-// callbackk
-app.post("/api/callback", (req,res)=>{
-   const data = req.body;
-   console.log(data);
-})
+  // wrong pin error and wrong input
+  if (data.Body.stkCallback.ResultCode === 2001) {
+    console.log(data.Body.stkCallback.ResultDesc);
+    const errorMessage = data.Body.stkCallback.ResultDesc;
+    return res
+      .status(400)
+      .json({ message: errorMessage + " You entered the wrong pin" });
+  }
+  //   request cancelled by user
+  if (data.Body.stkCallback.ResultCode === 1032) {
+    console.log(data.Body.stkCallback.ResultDesc);
+    const errorMessage = data.Body.stkCallback.ResultDesc;
+    return res
+      .status(400)
+      .json({ message: errorMessage + " You cancelled the request" });
+  }
 
-app.listen(6000, () => {
-  console.log("app listening on port 6000");
+  //   successful payment
+  if (!data.Body.stkCallback.CallbackMetadata) {
+    console.log(data.Body);
+  }
+
+  console.log(data.Body.stkCallback.CallbackMetadata);
+  const transactionData = data.Body.stkCallback.CallbackMetadata;
+  const amount = transactionData.Item[0].Value;
+  const receipt = transactionData.Item[1].Value;
+  const date = transactionData.Item[3].Value;
+  const phone_number = transactionData.Item[4].Value;
+  console.log(receipt, amount, date, phone_number);
+  connection.query(
+    "INSERT INTO Transactions (transaction_receipt, transaction_amount, transaction_date, transaction_phone_number) VALUES (?, ?, ?, ?)",
+    [receipt, amount, date, phone_number],
+    (err, result, fields) => {
+      if (err) {
+        console.warn(err);
+        return res.json("Failed to write to db");
+      }
+      console.log(result);
+    }
+  );
+});
+
+// ! server connection
+connection.connect((err) => {
+  if (err) {
+    console.warn("Failed to connect to db" + err);
+  } else {
+    console.log("database connected");
+    app.listen(port, () => {
+      console.log(`app listening on port ${port}`);
+    });
+  }
 });
