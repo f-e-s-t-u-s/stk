@@ -102,21 +102,21 @@ app.post("/api/callback", (req, res) => {
   console.log(data);
 
   // wrong pin error and wrong input
-  // if (data.Body.stkCallback.ResultCode === 2001) {
-  //   console.log(data.Body.stkCallback.ResultDesc);
-  //   const errorMessage = data.Body.stkCallback.ResultDesc;
-  //   return res
-  //     .status(400)
-  //     .json({ message: errorMessage + " You entered the wrong pin" });
-  // }
+  if (data.Body.stkCallback.ResultCode === 2001) {
+    console.log(data.Body.stkCallback.ResultDesc);
+    const errorMessage = data.Body.stkCallback.ResultDesc;
+    return res
+      .status(400)
+      .json({ message: errorMessage + " You entered the wrong pin" });
+  }
   //   request cancelled by user
-  // if (data.Body.stkCallback.ResultCode === 1032) {
-  //   console.log(data.Body.stkCallback.ResultDesc);
-  //   const errorMessage = data.Body.stkCallback.ResultDesc;
-  //   return res
-  //     .status(400)
-  //     .json({ message: errorMessage + " You cancelled the request" });
-  // }
+  if (data.Body.stkCallback.ResultCode === 1032) {
+    console.log(data.Body.stkCallback.ResultDesc);
+    const errorMessage = data.Body.stkCallback.ResultDesc;
+    return res
+      .status(400)
+      .json({ message: errorMessage + " You cancelled the request" });
+  }
 
   //
   if (!data.Body.stkCallback.CallbackMetadata) {
