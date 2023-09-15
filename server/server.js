@@ -28,7 +28,7 @@ const generateToken = async (req, res, next) => {
 
   await axios
     .get(
-      "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
+      "https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
       {
         headers: {
           authorization: `Basic ${auth}`,
@@ -58,7 +58,7 @@ app.post("/api/stk", generateToken, async (req, res) => {
     ("0" + date.getMinutes()).slice(-2) +
     ("0" + date.getSeconds()).slice(-2);
 
-  const shortcode = process.env.TILL_NUMBER;
+  const shortcode = process.env.SHORT_CODE;
   const passkey = process.env.PASS_KEY;
   const password = new Buffer.from(shortcode + passkey + timestamp).toString(
     "base64"
@@ -66,7 +66,7 @@ app.post("/api/stk", generateToken, async (req, res) => {
 
   await axios
     .post(
-      "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
+      "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
       {
         BusinessShortCode: shortcode,
         Password: password,
@@ -77,8 +77,8 @@ app.post("/api/stk", generateToken, async (req, res) => {
         PartyB: shortcode,
         PhoneNumber: `254${phone}`,
         CallBackURL: process.env.CALLBACK,
-        AccountReference: "test",
-        TransactionDesc: "test",
+        AccountReference: "MCLINIC",
+        TransactionDesc: "MCLinic",
       },
       {
         headers: {
@@ -102,27 +102,28 @@ app.post("/api/callback", (req, res) => {
   console.log(data);
 
   // wrong pin error and wrong input
-  if (data.Body.stkCallback.ResultCode === 2001) {
-    console.log(data.Body.stkCallback.ResultDesc);
-    const errorMessage = data.Body.stkCallback.ResultDesc;
-    return res
-      .status(400)
-      .json({ message: errorMessage + " You entered the wrong pin" });
-  }
+  // if (data.Body.stkCallback.ResultCode === 2001) {
+  //   console.log(data.Body.stkCallback.ResultDesc);
+  //   const errorMessage = data.Body.stkCallback.ResultDesc;
+  //   return res
+  //     .status(400)
+  //     .json({ message: errorMessage + " You entered the wrong pin" });
+  // }
   //   request cancelled by user
-  if (data.Body.stkCallback.ResultCode === 1032) {
-    console.log(data.Body.stkCallback.ResultDesc);
-    const errorMessage = data.Body.stkCallback.ResultDesc;
-    return res
-      .status(400)
-      .json({ message: errorMessage + " You cancelled the request" });
-  }
+  // if (data.Body.stkCallback.ResultCode === 1032) {
+  //   console.log(data.Body.stkCallback.ResultDesc);
+  //   const errorMessage = data.Body.stkCallback.ResultDesc;
+  //   return res
+  //     .status(400)
+  //     .json({ message: errorMessage + " You cancelled the request" });
+  // }
 
-  //   successful payment
+  //
   if (!data.Body.stkCallback.CallbackMetadata) {
     console.log(data.Body);
+    // todo user has insufficeint balance
   }
-
+  //   successful payment
   console.log(data.Body.stkCallback.CallbackMetadata);
   const transactionData = data.Body.stkCallback.CallbackMetadata;
   const amount = transactionData.Item[0].Value;
