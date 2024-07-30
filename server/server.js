@@ -12,13 +12,14 @@ app.use(cors());
 app.use(bodyparser.urlencoded({ extended: true }));
 app.use(bodyparser.json());
 
-// ! database connection
-const connection = mysql.createConnection({
-  host: process.env.HOST,
-  user: process.env.USER,
-  password: process.env.PASSWORD,
-  database: process.env.DATABASE,
-});
+
+// // ! database connection
+// const connection = mysql.createConnection({
+//   host: process.env.HOST,
+//   user: process.env.USER,
+//   password: process.env.PASSWORD,
+//   database: process.env.DATABASE,
+// });
 
 
 // ! get token middleware
@@ -133,17 +134,17 @@ app.post("/api/callback", (req, res) => {
   const date = transactionData.Item[3].Value;
   const phone_number = transactionData.Item[4].Value;
   console.log(receipt, Amount, date, phone_number);
-  connection.query(
-    "INSERT INTO Transactions (transaction_receipt, transaction_amount, transaction_date, transaction_phone_number) VALUES (?, ?, ?, ?)",
-    [receipt, Amount, date, phone_number],
-    (err, result, fields) => {
-      if (err) {
-        console.warn(err);
-        return res.json("Failed to write to db");
-      }
-      console.log(result);
-    }
-  );
+  // connection.query(
+  //   "INSERT INTO Transactions (transaction_receipt, transaction_amount, transaction_date, transaction_phone_number) VALUES (?, ?, ?, ?)",
+  //   [receipt, Amount, date, phone_number],
+  //   (err, result, fields) => {
+  //     if (err) {
+  //       console.warn(err);
+  //       return res.json("Failed to write to db");
+  //     }
+  //     console.log(result);
+  //   }
+  // );
 });
 
 // ! server connection
